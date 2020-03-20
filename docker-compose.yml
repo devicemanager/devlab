@@ -1,0 +1,122 @@
+version: '3'
+
+networks:
+  devlab:
+    driver: bridge
+volumes:
+  nexus-data:
+  jenkins-data:
+
+services:
+  nexus:
+    image: sonatype/nexus3
+    restart: always
+    ports:
+      - "18081:8081"
+    networks:
+      - devlab
+    volumes:
+      - nexus-data:/nexus-data
+  jenkins:
+    image: jenkins/jenkins
+    restart: always
+    ports:
+      - "18080:8080"
+    networks:
+      - devlab
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /Applications/Docker.app/Contents/Resources/bin/docker:/usr/bin/docker
+      - jenkins-data:/var/lib/jenkins
+    depends_on:
+      - nexus
+      - sonar
+    environment:
+      - NEXUS_PORT=8081
+      - SONAR_PORT=9000
+      - SONAR_DB_PORT=5432
+  sonardb:
+    networks:
+      - devlab
+    restart: always
+    image: postgres:9.6
+    ports:
+      - "5432:5432"
+    environment:
+     - POSTGRES_USER=sonar
+     - POSTGRES_PASSWORD=sonar
+  sonar:
+    image: sonarqube
+    restart: always
+    ports:
+     - "19000:9000"
+     - "19092:9092"
+    networks:
+      - devlab
+    depends_on:
+      - sonardb
+    environment:
+     - SONARQUBE_JDBC_URL=jdbc:postgresql://sonardb:5432/sonar
+     - SONARQUBE_JDBC_USERNAME=sonar
+     - SONARQUBE_JDBC_PASSWORD=sonar
+  gerrit:
+    image: gerritcodereview/gerrit
+    ports:
+      - "18082:8080"
+      - "29418:29418"
+    depends_on:
+      - ldap
+    volumes:
+      - /opt/devlab/gerrit/etc:/var/gerrit/etc
+      - /opt/devlab/gerrit/git:/var/gerrit/git
+      - /opt/devlab/gerrit/db:/var/gerrit/db
+      - /opt/devlab/gerrit/index:/var/gerrit/index
+      - /opt/devlab/gerrit/cache:/var/gerrit/cache
+    environment:
+      - CANONICAL_WEB_URL=http://review.example.com:8080
+    networks:
+      - devlab
+  ldap:
+    image: osixia/openldap
+    ports:
+      - "389:389"
+      - "636:636"
+    environment:
+      - LDAP_ADMIN_PASSWORD=secret
+    volumes:
+      - /opt/devlab/ldap/var:/var/lib/ldap
+      - /opt/devlab/ldap/etc:/etc/ldap/slapd.d
+    networks:
+      - devlab
+  ldap-admin:
+    image: osixia/phpldapadmin
+    ports:
+      - "6443:443"
+    environment:
+      - PHPLDAPADMIN_LDAP_HOSTS=ldap
+    networks:
+      - devlab
+  seleniumhub:
+    image: selenium/hub
+    ports:
+      - "4444:4444"
+    networks:
+      - devlab
+  firefox:
+    image: selenium/node-firefox
+    depends_on:
+      - seleniumhub
+    environment:
+      - HUB_PORT_4444_TCP_ADDR=seleniumhub
+      - HUB_PORT_4444_TCP_PORT=4444
+    networks:
+      - devlab
+  chrome:
+    image: selenium/node-chrome
+    depends_on:
+      - seleniumhub
+    environment:
+      - HUB_PORT_4444_TCP_ADDR=seleniumhub
+      - HUB_PORT_4444_TCP_PORT=4444
+    networks:
+      - devlab
