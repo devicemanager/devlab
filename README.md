@@ -1,3 +1,5 @@
+# devlab
+
 Setup local devlab environment using Docker via docker-compose (Jenkins, SonarQube, Nexus, Gerrit, Selenium Grid with Firefox and chrome)
 
 Quick setup:
@@ -25,4 +27,3 @@ To bootstrap the rest of the environment.
 After succesful loading edit using ldapadmin https://localhost:6443/
 
 With special thanks to Marcel Birkner who inspired me to create this repo. 
-# devlab
