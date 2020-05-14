@@ -1,8 +1,8 @@
 version: '3'
 
 networks:
-  devlab:
-    driver: bridge
+  devlab: 
+
 volumes:
   nexus-data:
   jenkins-data:
@@ -16,7 +16,7 @@ services:
     networks:
       - devlab
     volumes:
-      - nexus-data:/nexus-data
+      - /opt/devlab/nexus/:/nexus-data
   jenkins:
     image: jenkins/jenkins
     restart: always
@@ -28,6 +28,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /Applications/Docker.app/Contents/Resources/bin/docker:/usr/bin/docker
       - /opt/devlab/jenkins:/var/lib/jenkins
+      - /opt/devlab/jenkins/home:/var/jenkins_home
     depends_on:
       - nexus
       - sonar
@@ -45,6 +46,8 @@ services:
     environment:
      - POSTGRES_USER=sonar
      - POSTGRES_PASSWORD=sonar
+    volumes:
+       - /opt/devlab/postgres:/var/lib/postgresql/data
   sonar:
     image: sonarqube
     restart: always
@@ -73,7 +76,7 @@ services:
       - /opt/devlab/gerrit/index:/var/gerrit/index
       - /opt/devlab/gerrit/cache:/var/gerrit/cache
     environment:
-      - CANONICAL_WEB_URL=http://review.example.com:18082
+      - CANONICAL_WEB_URL=http://git:18082
     networks:
       - devlab
   ldap:
